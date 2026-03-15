@@ -94,11 +94,10 @@ def search_lines(
         match_fn = lambda line: compiled.search(line) is not None  # noqa: E731
     else:
         needle = pattern.lower() if ignore_case else pattern
-        match_fn = (
-            lambda line: needle in line.lower()
-            if ignore_case
-            else lambda line: needle in line  # noqa: E731
-        )
+        if ignore_case:
+            match_fn = lambda line: needle in line.lower()  # noqa: E731
+        else:
+            match_fn = lambda line: needle in line  # noqa: E731
 
     total = len(lines)
     width = len(str(total))

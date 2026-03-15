@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-read_gbk.py — 读取 / 搜索文本文件，自动识别 GBK / UTF-8 编码，输出为 UTF-8。
+read_file.py — 读取 / 搜索文本文件，自动识别 GBK / UTF-8 编码，输出为 UTF-8。
 
 用法示例：
-  python read_gbk.py file.txt                          # 读取全文（自动检测编码）
-  python read_gbk.py file.txt --start 10 --end 20      # 读取第 10~20 行
-  python read_gbk.py file.txt --search "关键词"         # 搜索（含上下文）
-  python read_gbk.py file.txt --search "pattern" --regex --context 3
-  python read_gbk.py file.txt --encoding gbk            # 手动指定编码
-  python read_gbk.py file.txt --encoding utf-8          # 手动指定编码
-  python read_gbk.py file.txt --out result.txt          # 结果写入文件
+  python read_file.py file.txt                          # 读取全文（自动检测编码）
+  python read_file.py file.txt --start 10 --end 20      # 读取第 10~20 行
+  python read_file.py file.txt --search "关键词"         # 搜索（含上下文）
+  python read_file.py file.txt --search "pattern" --regex --context 3
+  python read_file.py file.txt --encoding gbk            # 手动指定编码
+  python read_file.py file.txt --encoding utf-8          # 手动指定编码
+  python read_file.py file.txt --out result.txt          # 结果写入文件
 """
 
 from __future__ import annotations
@@ -150,11 +150,10 @@ def search_lines(
         match_fn = lambda line: compiled.search(line) is not None  # noqa: E731
     else:
         needle = pattern.lower() if ignore_case else pattern
-        match_fn = (
-            lambda line: needle in line.lower()
-            if ignore_case
-            else lambda line: needle in line  # noqa: E731
-        )
+        if ignore_case:
+            match_fn = lambda line: needle in line.lower()  # noqa: E731
+        else:
+            match_fn = lambda line: needle in line  # noqa: E731
 
     total = len(lines)
     width = len(str(total))

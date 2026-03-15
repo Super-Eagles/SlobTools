@@ -2,7 +2,7 @@
 """
 Excel 内容对比工具（忽略格式，支持插入/删除行检测）
 安装依赖: pip install openpyxl
-用法:     python cmp.py 表1.xlsx 表2.xlsx
+用法:     python cmpexcel.py 表1.xlsx 表2.xlsx
 """
 
 import sys

@@ -15,7 +15,6 @@ def compare_sheets(df1, df2, sheet_name):
 
     # 对齐列和行（以较大者为准）
     all_cols = sorted(set(df1.columns) | set(df2.columns), key=lambda x: (str(type(x)), x))
-    all_rows = range(max(len(df1), len(df2)))
 
     only_in_1 = [c for c in df1.columns if c not in df2.columns]
     only_in_2 = [c for c in df2.columns if c not in df1.columns]
@@ -109,8 +108,8 @@ def main():
 
     for s1, s2 in common_sheets:
         label = f"Sheet: {s1}" if s1 == s2 else f"Sheet: {s1}（表1） vs {s2}（表2）"
-        df1 = wb1[s1].fillna("").astype(str) if False else wb1[s1]
-        df2 = wb2[s2].fillna("").astype(str) if False else wb2[s2]
+        df1 = wb1[s1]
+        df2 = wb2[s2]
 
         diffs = compare_sheets(df1, df2, s1)
 

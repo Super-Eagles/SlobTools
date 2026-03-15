@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Excel 内容对比工具（忽略格式，只比较单元格值）
+read_excel.py — Excel 内容对比工具（忽略格式，只比较单元格值）
 安装依赖: pip install openpyxl
-用法:     python cmp.py 表1.xlsx 表2.xlsx
+用法:     python read_excel.py 表1.xlsx 表2.xlsx
 """
 
 import sys
@@ -31,16 +31,6 @@ def compare_sheets(ws1, ws2):
                 row_diffs[r].append((ref, v1, v2))
 
     return row_diffs
-
-
-def format_row_diff(row, cells):
-    """把一行的差异格式化成两行：表1一行，表2一行"""
-    refs1 = "  ".join(f"{ref}['{v1}']" for ref, v1, _ in cells)
-    refs2 = "  ".join(f"{ref}['{v2}']" for ref, _, v2 in cells)
-    return (
-        f"  第{row}行  {refs1}\n"
-        f"  第{row}行  {refs2}"
-    )
 
 
 def main():

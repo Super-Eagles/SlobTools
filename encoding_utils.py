@@ -12,16 +12,9 @@ try:
     from charset_normalizer import from_bytes as _cn_from_bytes
 
     def detect_encoding(raw: bytes) -> tuple[str | None, float]:
-        """返回 (编码名称, 置信度)，无法判断时返回 (None, 0.0)。"""
-        if not raw:
-            return None, 0.0
-        result = _cn_from_bytes(raw).best()
-        if result is None:
-            return None, 0.0
-        return result.encoding, result.chaos  # chaos 越低越可信；此处统一转为置信度
-        # charset-normalizer 没有直接的 confidence；chaos ∈ [0,1]，0 表示最可信
-        # 我们把 (1 - chaos) 作为置信度
-    def detect_encoding(raw: bytes) -> tuple[str | None, float]:  # noqa: F811
+        """返回 (编码名称, 置信度)，无法判断时返回 (None, 0.0)。
+        charset-normalizer 的 chaos ∈ [0,1]，0 表示最可信，故置信度 = 1 - chaos。
+        """
         if not raw:
             return None, 0.0
         result = _cn_from_bytes(raw).best()
