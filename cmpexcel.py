@@ -109,7 +109,7 @@ def compare_sheets(ws1, ws2, file1, file2, sheet_label):
 
 def main():
     if len(sys.argv) != 3:
-        print("用法: python cmp.py 表1.xlsx 表2.xlsx")
+        print("用法: python cmpexcel.py 表1.xlsx 表2.xlsx")
         sys.exit(1)
 
     file1, file2 = sys.argv[1], sys.argv[2]

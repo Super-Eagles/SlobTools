@@ -235,12 +235,8 @@ def op_patch(
     if use_regex:
         result, n = re.subn(old, new, full_text, count=count)
     else:
-        if count:
-            result = full_text.replace(old, new, count)
-            n = full_text.count(old) if count == 0 else min(full_text.count(old), count)
-        else:
-            n = full_text.count(old)
-            result = full_text.replace(old, new)
+        n = min(full_text.count(old), count) if count else full_text.count(old)
+        result = full_text.replace(old, new, count or -1)
     return result.splitlines(), n
 
 

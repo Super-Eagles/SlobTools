@@ -29,9 +29,11 @@ def compare_sheets(df1, df2, sheet_name):
 
     # 逐单元格对比（公共列）
     common_cols = [c for c in df1.columns if c in df2.columns]
+    # 预先计算每列在 df1 中的真实位置（用于生成正确的 Excel 列字母）
+    df1_col_positions = {col: i for i, col in enumerate(df1.columns)}
     cell_diffs = []
 
-    for col_idx, col in enumerate(common_cols):
+    for col in common_cols:
         for row_idx in range(max(len(df1), len(df2))):
             val1 = df1[col].iloc[row_idx] if row_idx < len(df1) else "<缺失>"
             val2 = df2[col].iloc[row_idx] if row_idx < len(df2) else "<缺失>"
@@ -48,8 +50,9 @@ def compare_sheets(df1, df2, sheet_name):
                 val2 = "<空>"
 
             if str(val1) != str(val2):
-                # Excel 坐标：列字母 + 行号（+2 因为有标题行，行从1开始）
-                col_letter = get_column_letter(col_idx + 1)
+                # Excel 坐标：使用该列在 df1 中的真实列位置（+1 转为 1-indexed）
+                actual_col_idx = df1_col_positions.get(col, 0)
+                col_letter = get_column_letter(actual_col_idx + 1)
                 excel_row = row_idx + 2
                 cell_ref = f"{col_letter}{excel_row}"
                 cell_diffs.append(

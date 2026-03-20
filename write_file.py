@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 r"""
-write_gbk.py — 对文本文件进行安全写入，自动识别并保持原有编码（GBK / UTF-8）。
+write_file.py — 对文本文件进行安全写入，自动识别并保持原有编码（GBK / UTF-8）。
 
 专为 AI 工具调用设计：所有内容以 UTF-8 字符串传入，脚本自动检测目标文件编码，
 并以相同编码写回，绝不破坏原有编码。
@@ -33,33 +33,33 @@ write_gbk.py — 对文本文件进行安全写入，自动识别并保持原有
 ━━━ 典型用法 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   # 追加一行（自动识别编码）
-  python write_gbk.py file.txt --mode append --content "新的一行"
+  python write_file.py file.txt --mode append --content "新的一行"
 
   # 在第 5 行前插入
-  python write_gbk.py file.txt --mode insert --start 5 --content "插入内容"
+  python write_file.py file.txt --mode insert --start 5 --content "插入内容"
 
   # 替换第 10~15 行
-  python write_gbk.py file.txt --mode replace --start 10 --end 15 \
+  python write_file.py file.txt --mode replace --start 10 --end 15 \
       --content-file new_block.txt
 
   # 删除第 3~7 行
-  python write_gbk.py file.txt --mode delete --start 3 --end 7
+  python write_file.py file.txt --mode delete --start 3 --end 7
 
   # 全局字符串替换
-  python write_gbk.py file.txt --mode patch --old "旧字符串" --new "新字符串"
+  python write_file.py file.txt --mode patch --old "旧字符串" --new "新字符串"
 
   # 正则替换
-  python write_gbk.py file.txt --mode patch --old "\d+" --new "#\g<0>" --regex
+  python write_file.py file.txt --mode patch --old "\d+" --new "#\g<0>" --regex
 
   # 完全覆盖
-  python write_gbk.py file.txt --mode overwrite --content-file new_content.txt
+  python write_file.py file.txt --mode overwrite --content-file new_content.txt
 
   # 手动指定编码（跳过自动检测）
-  python write_gbk.py file.txt --mode append --content "内容" --encoding gbk
-  python write_gbk.py file.txt --mode append --content "内容" --encoding utf-8
+  python write_file.py file.txt --mode append --content "内容" --encoding gbk
+  python write_file.py file.txt --mode append --content "内容" --encoding utf-8
 
   # 预览（不写入）
-  python write_gbk.py file.txt --mode replace --start 1 --end 3 \
+  python write_file.py file.txt --mode replace --start 1 --end 3 \
       --content "preview" --dry-run --diff
 """
 
@@ -367,7 +367,7 @@ def main() -> None:  # noqa: C901
         if args.create or mode in ("append", "overwrite"):
             os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
             open(path, "wb").close()
-            print(f"[write_gbk] 已创建新文件：{path}", file=sys.stderr)
+            print(f"[write_file] 已创建新文件：{path}", file=sys.stderr)
         else:
             _err(f"文件不存在：'{path}'\n提示：使用 --create 可自动创建。")
     if not os.path.isfile(path):
@@ -379,7 +379,7 @@ def main() -> None:  # noqa: C901
     except Exception as e:
         _err(f"读取文件失败：{e}")
 
-    print(f"[write_gbk] 检测编码：{file_enc}", file=sys.stderr)
+    print(f"[write_file] 检测编码：{file_enc}", file=sys.stderr)
 
     # ── 执行操作 ──────────────────────────────────────────────────────────────
     extra_info = ""
@@ -438,7 +438,7 @@ def main() -> None:  # noqa: C901
     if not args.no_backup and os.path.getsize(path) > 0:
         bak = backup(path)
         if bak:
-            print(f"[write_gbk] 备份：{bak}", file=sys.stderr)
+            print(f"[write_file] 备份：{bak}", file=sys.stderr)
 
     # ── 原子写入 ──────────────────────────────────────────────────────────────
     try:
@@ -454,7 +454,7 @@ def main() -> None:  # noqa: C901
 
     size = os.path.getsize(path)
     print(
-        f"[write_gbk] ✅ {mode} 成功 → {path}\n"
+        f"[write_file] ✅ {mode} 成功 → {path}\n"
         f"            编码：{file_enc}，行数：{len(old_lines)} → {len(new_lines)}，"
         f"大小：{size:,} 字节"
         + (f"，{extra_info}" if extra_info else ""),
@@ -463,7 +463,7 @@ def main() -> None:  # noqa: C901
 
 
 def _err(msg: str) -> None:
-    print(f"[write_gbk] 错误：{msg}", file=sys.stderr)
+    print(f"[write_file] 错误：{msg}", file=sys.stderr)
     sys.exit(1)
 
 
