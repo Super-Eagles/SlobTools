@@ -1,0 +1,4 @@
+interface:
+  display_name: "Memory Skill"
+  short_description: "基于 Redis + SQLite 的会话记忆 skill，支持启用后按回合自动检索和写入。"
+  default_prompt: "Use this skill to run session-based memory with Redis hot memory and SQLite cold memory. When the user enables memory mode, start a session, retrieve memory before each answer, write hot memory after each answer, and persist on session end."

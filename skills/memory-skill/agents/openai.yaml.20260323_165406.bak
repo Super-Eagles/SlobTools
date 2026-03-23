@@ -1,0 +1,4 @@
+interface:
+  display_name: "Memory Skill"
+  short_description: "基于 Redis + SQLite 的热冷分层记忆 skill。"
+  default_prompt: "Use this skill to store, retrieve, summarize, inject, and persist two-tier conversational memory with Redis hot memory and SQLite cold memory."
