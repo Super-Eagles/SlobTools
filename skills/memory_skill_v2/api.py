@@ -1,5 +1,5 @@
 from .db       import sqlite_db, redis_db
-from .core     import write, retrieve, persist, inject
+from .core     import write, retrieve, persist, inject, analyze
 from .utils    import embedding
 
 
@@ -30,18 +30,28 @@ def remember(user_id, session_id, turn, query_text):
 
 
 def memorize(user_id, session_id, turn, summary, keywords, raw_q="", raw_a=""):
-    vec    = embedding.embed(summary)
-    mem_id = write.write(
+    items = analyze.build_memory_items(
+        turn     = turn,
+        summary  = summary,
+        keywords = keywords,
+        raw_q    = raw_q,
+        raw_a    = raw_a,
+    )
+    if not items:
+        return []
+
+    for item in items:
+        item["embedding"] = embedding.embed(item["summary"])
+
+    mem_ids = write.write_many(
         user_id    = user_id,
         session_id = session_id,
         turn       = turn,
-        summary    = summary,
-        keywords   = keywords,
-        embedding  = vec,
+        items      = items,
         raw_q      = raw_q,
         raw_a      = raw_a,
     )
-    return mem_id
+    return mem_ids
 
 
 def flush(user_id, session_id):

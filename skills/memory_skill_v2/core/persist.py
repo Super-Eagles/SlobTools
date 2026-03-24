@@ -8,7 +8,7 @@ from .. import config
 
 def persist_session(user_id, session_id):
     r    = redis_db.get_client()
-    keys = r.keys(redis_db.hot_pattern(user_id, session_id))
+    keys = redis_db.scan_hot_keys(user_id, session_id)
 
     if not keys:
         return {"inserted": 0, "updated": 0, "skipped": 0}
@@ -18,7 +18,11 @@ def persist_session(user_id, session_id):
         val = r.get(key)
         if val:
             memories.append(json.loads(val))
-    memories.sort(key=lambda m: m["turn"])
+    memories.sort(key=lambda m: (
+        int(m.get("turn", 0)),
+        int(m.get("item_index", 0)),
+        m.get("created_at", ""),
+    ))
 
     conn  = sqlite_db.get_conn()
     stats = {"inserted": 0, "updated": 0, "skipped": 0}
@@ -46,7 +50,7 @@ def _persist_one(conn, mem, stats):
 
     vec_bytes  = vec_utils.serialize(embedding)
     merge_dist = 1.0 - config.MERGE_THRESHOLD
-    similar    = _find_closest(conn, mem["user_id"], vec_bytes)
+    similar    = _find_closest(conn, mem["user_id"], vec_bytes, mem.get("kind", "general"))
 
     if similar is None or similar["distance"] > merge_dist:
         _insert(conn, mem, vec_bytes)
@@ -57,7 +61,8 @@ def _persist_one(conn, mem, stats):
     old_kw  = _to_list(similar["keywords"] or "[]")
     overlap = vec_utils.keyword_overlap(new_kw, old_kw)
 
-    if overlap >= 0.4:
+    same_kind = similar.get("kind", "general") == mem.get("kind", "general")
+    if overlap >= 0.4 and same_kind:
         _update(conn, similar["rowid"], similar["id"], mem, vec_bytes)
         stats["updated"] += 1
     else:
@@ -65,17 +70,18 @@ def _persist_one(conn, mem, stats):
         stats["inserted"] += 1
 
 
-def _find_closest(conn, user_id, vec_bytes):
+def _find_closest(conn, user_id, vec_bytes, kind):
     try:
         row = conn.execute("""
-            SELECT m.rowid, m.id, m.keywords, v.distance
+            SELECT m.rowid, m.id, m.keywords, m.kind, v.distance
             FROM   memories_vec v
             JOIN   memories m ON m.rowid = v.rowid
             WHERE  v.embedding MATCH ?
             AND    m.user_id = ?
+            AND    m.kind = ?
             ORDER  BY v.distance ASC
             LIMIT  1
-        """, (vec_bytes, user_id)).fetchone()
+        """, (vec_bytes, user_id, kind)).fetchone()
         return dict(row) if row else None
     except Exception:
         return None
@@ -86,10 +92,13 @@ def _insert(conn, mem, vec_bytes):
     keywords = _to_json(mem.get("keywords", []))
 
     cursor = conn.execute("""
-        INSERT INTO memories (id, user_id, session_id, turn, summary, keywords, raw_q, raw_a)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO memories (
+            id, user_id, session_id, turn, item_index, kind, summary, keywords, raw_q, raw_a
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         mem_id, mem["user_id"], mem["session_id"], mem["turn"],
+        mem.get("item_index", 0), mem.get("kind", "general"),
         mem["summary"], keywords, mem.get("raw_q", ""), mem.get("raw_a", ""),
     ))
 
@@ -106,12 +115,15 @@ def _update(conn, rowid, mem_id, new_mem, vec_bytes):
         UPDATE memories
         SET summary    = ?,
             keywords   = ?,
+            item_index = ?,
+            kind       = ?,
             raw_q      = ?,
             raw_a      = ?,
             version    = version + 1,
             updated_at = datetime('now')
         WHERE id = ?
     """, (new_mem["summary"], keywords,
+          new_mem.get("item_index", 0), new_mem.get("kind", "general"),
           new_mem.get("raw_q", ""), new_mem.get("raw_a", ""), mem_id))
 
     conn.execute("DELETE FROM memories_vec WHERE rowid = ?", (rowid,))

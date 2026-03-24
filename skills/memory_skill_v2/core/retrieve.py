@@ -14,12 +14,16 @@ def retrieve(user_id, session_id, query_embedding, query_text=""):
 
 def _get_hot(user_id, session_id):
     r    = redis_db.get_client()
-    keys = r.keys(redis_db.hot_pattern(user_id, session_id))
+    keys = redis_db.scan_hot_keys(user_id, session_id)
     if not keys:
         return []
     values   = r.mget(keys)
     memories = [json.loads(v) for v in values if v]
-    memories.sort(key=lambda m: m["turn"])
+    memories.sort(key=lambda m: (
+        int(m.get("turn", 0)),
+        int(m.get("item_index", 0)),
+        m.get("created_at", ""),
+    ))
     return memories
 
 

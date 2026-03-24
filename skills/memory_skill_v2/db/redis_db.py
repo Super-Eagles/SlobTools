@@ -18,8 +18,8 @@ def ping():
         return False
 
 
-def hot_key(user_id, session_id, turn):
-    return f"mem:hot:{user_id}:{session_id}:{turn}"
+def hot_key(user_id, session_id, turn, item_index=0):
+    return f"mem:hot:{user_id}:{session_id}:{turn}:{item_index}"
 
 
 def turns_key(session_id):
@@ -28,3 +28,8 @@ def turns_key(session_id):
 
 def hot_pattern(user_id, session_id):
     return f"mem:hot:{user_id}:{session_id}:*"
+
+
+def scan_hot_keys(user_id, session_id):
+    pattern = hot_pattern(user_id, session_id)
+    return list(get_client().scan_iter(match=pattern, count=200))

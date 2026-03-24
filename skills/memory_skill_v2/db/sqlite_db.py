@@ -49,6 +49,8 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             user_id     TEXT NOT NULL,
             session_id  TEXT NOT NULL,
             turn        INTEGER NOT NULL,
+            item_index  INTEGER DEFAULT 0,
+            kind        TEXT DEFAULT 'general',
             summary     TEXT NOT NULL,
             keywords    TEXT DEFAULT '[]',
             raw_q       TEXT,
@@ -58,10 +60,12 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             updated_at  TEXT DEFAULT (datetime('now'))
         )
     """)
+    _ensure_columns(conn)
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_mem_user    ON memories(user_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_mem_session ON memories(session_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_mem_time    ON memories(created_at DESC)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_mem_turn    ON memories(session_id, turn, item_index)")
 
     conn.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts
@@ -93,6 +97,17 @@ def _create_schema(conn: sqlite3.Connection) -> None:
     """)
 
     conn.commit()
+
+
+def _ensure_columns(conn: sqlite3.Connection) -> None:
+    rows = conn.execute("PRAGMA table_info(memories)").fetchall()
+    columns = {row["name"] for row in rows}
+
+    if "item_index" not in columns:
+        conn.execute("ALTER TABLE memories ADD COLUMN item_index INTEGER DEFAULT 0")
+
+    if "kind" not in columns:
+        conn.execute("ALTER TABLE memories ADD COLUMN kind TEXT DEFAULT 'general'")
 
 
 def get_db_path() -> str:
