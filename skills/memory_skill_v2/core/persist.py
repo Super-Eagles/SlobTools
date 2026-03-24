@@ -23,10 +23,15 @@ def persist_session(user_id, session_id):
     conn  = sqlite_db.get_conn()
     stats = {"inserted": 0, "updated": 0, "skipped": 0}
 
-    for mem in memories:
-        _persist_one(conn, mem, stats)
+    with sqlite_db.write_lock:
+        try:
+            for mem in memories:
+                _persist_one(conn, mem, stats)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
 
-    conn.commit()
     r.delete(*keys)
     r.delete(redis_db.turns_key(session_id))
 

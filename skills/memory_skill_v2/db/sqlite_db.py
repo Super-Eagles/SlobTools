@@ -1,22 +1,34 @@
-import sqlite3
 import os
+import sqlite3
+import threading
+
 import sqlite_vec
+
 from .. import config
 
-_conn = None
+# ── 连接单例 ──────────────────────────────────────────────────────────────────
+# SQLite 本身支持多线程读，但写操作存在竞争。
+# write_lock 在同一进程内序列化所有写入，配合 check_same_thread=False 使用。
+# 跨进程并发写入请开启 WAL 模式（PRAGMA journal_mode=WAL），当前版本不支持。
+_conn: sqlite3.Connection | None = None
+write_lock = threading.Lock()
 
-# Resolve SQLITE_PATH relative to the skill package directory,
-# not the caller's working directory.
-# e.g.  ./memory.db  →  C:\Users\slob\.gemini\...\memory_skill_v2\memory.db
+# 将相对路径解析为 skill 包目录下的绝对路径，
+# 避免因调用方工作目录不同而导致数据库分散在多处。
 _SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_DB_PATH   = config.SQLITE_PATH if os.path.isabs(config.SQLITE_PATH) \
-             else os.path.join(_SKILL_DIR, config.SQLITE_PATH)
+_DB_PATH   = (
+    config.SQLITE_PATH
+    if os.path.isabs(config.SQLITE_PATH)
+    else os.path.join(_SKILL_DIR, config.SQLITE_PATH)
+)
 
 
-def get_conn():
+def get_conn() -> sqlite3.Connection:
     global _conn
     if _conn is None:
-        os.makedirs(os.path.dirname(_DB_PATH), exist_ok=True)
+        db_dir = os.path.dirname(_DB_PATH)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
 
         _conn = sqlite3.connect(_DB_PATH, check_same_thread=False)
         _conn.row_factory = sqlite3.Row
@@ -30,7 +42,7 @@ def get_conn():
     return _conn
 
 
-def _create_schema(conn):
+def _create_schema(conn: sqlite3.Connection) -> None:
     conn.execute("""
         CREATE TABLE IF NOT EXISTS memories (
             id          TEXT PRIMARY KEY,
@@ -83,12 +95,12 @@ def _create_schema(conn):
     conn.commit()
 
 
-def get_db_path():
-    """Return the resolved absolute path to the database file."""
+def get_db_path() -> str:
+    """返回数据库文件的绝对路径。"""
     return _DB_PATH
 
 
-def close():
+def close() -> None:
     global _conn
     if _conn:
         _conn.close()

@@ -1,13 +1,12 @@
 """
-memory_skill_v2 · End-to-End Test
-===================================
-Tests the AI-callable interface: remember / memorize / flush.
-Uses real local embeddings (sentence-transformers).
+memory_skill_v2 · 端到端测试
+==============================
+测试 AI 可调用接口：remember / memorize / flush。
+使用真实的本地 embedding（sentence-transformers）。
 
-Does NOT require a real AI.
-Does NOT require network access after the model is downloaded.
+不需要真实 AI，下载模型后不需要网络连接。
 
-Run from D:\\mcsv3:
+运行方式（在 memory_skill_v2 的上级目录执行）：
     python -m memory_skill_v2.test_skill
 """
 
@@ -15,8 +14,9 @@ import os
 import sys
 import tempfile
 
-# Redirect DB to a temp file so tests don't pollute the real DB
-_tmp_db = tempfile.mktemp(suffix=".db")
+# 将 DB 重定向到临时文件，避免污染真实数据库
+_tmp_fd, _tmp_db = tempfile.mkstemp(suffix=".db")
+os.close(_tmp_fd)
 os.environ["MEMORY_SQLITE_PATH"] = _tmp_db
 os.environ["MEMORY_EMBED_DIM"]   = "384"
 
@@ -37,7 +37,7 @@ def test_setup():
 
 
 def test_remember_empty():
-    sep("TEST 2 · remember() returns empty string when no memories exist")
+    sep("TEST 2 · remember() 在无记忆时返回空字符串")
     result = skill.remember(
         user_id    = "user_new",
         session_id = "session_new",
@@ -49,7 +49,7 @@ def test_remember_empty():
 
 
 def test_memorize_and_hot_remember():
-    sep("TEST 3 · memorize() then remember() finds hot memories")
+    sep("TEST 3 · memorize() 后 remember() 能命中热记忆")
     USER, SID = "user_a", "session_001"
 
     skill.memorize(
@@ -87,7 +87,7 @@ def test_memorize_and_hot_remember():
 
 
 def test_flush_and_cold_remember():
-    sep("TEST 4 · flush() then remember() finds cold memories in new session")
+    sep("TEST 4 · flush() 后在新 session 能命中冷记忆")
     USER, SID = "user_a", "session_001"
 
     stats = skill.flush(user_id=USER, session_id=SID)
@@ -108,20 +108,20 @@ def test_flush_and_cold_remember():
 
 
 def test_flush_merge():
-    sep("TEST 5 · flush() merges near-duplicate memories")
+    sep("TEST 5 · flush() 合并近似重复记忆")
     USER = "user_merge"
 
     skill.memorize(
         user_id=USER, session_id="s_a", turn=1,
-        summary="用户偏好使用轻量本地部署方案，不想引入复杂依赖",
-        keywords=["轻量", "本地部署", "依赖"],
+        summary  = "用户偏好使用轻量本地部署方案，不想引入复杂依赖",
+        keywords = ["轻量", "本地部署", "依赖"],
     )
     skill.flush(user_id=USER, session_id="s_a")
 
     skill.memorize(
         user_id=USER, session_id="s_b", turn=1,
-        summary="用户仍然坚持轻量本地部署，明确排除云服务方案",
-        keywords=["轻量", "本地部署", "云服务"],
+        summary  = "用户仍然坚持轻量本地部署，明确排除云服务方案",
+        keywords = ["轻量", "本地部署", "云服务"],
     )
     stats = skill.flush(user_id=USER, session_id="s_b")
 
@@ -140,7 +140,7 @@ def test_get_stats():
 
 
 def test_empty_flush():
-    sep("TEST 7 · flush() on non-existent session returns zeros")
+    sep("TEST 7 · 对不存在的 session 执行 flush() 返回全零")
     result = skill.flush("user_a", "session_nonexistent_xyz")
     assert result == {"inserted": 0, "updated": 0, "skipped": 0}
     print(f"  {result}")

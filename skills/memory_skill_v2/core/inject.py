@@ -25,9 +25,15 @@ def format_for_prompt(hot_memories, cold_memories):
 
 
 def estimate_tokens(text):
+    """估算文本的 token 数量。
+
+    对中文字符按 1 token/字计，对其余字符按 4 字符/token 计，
+    最后乘以 1.2 的安全系数以应对中英混排及 tokenizer 差异。
+    """
     chinese = sum(1 for c in text if "\u4e00" <= c <= "\u9fff")
     others  = len(text) - chinese
-    return chinese + others // 4
+    raw     = chinese + others // 4
+    return int(raw * 1.2)
 
 
 def trim_to_budget(hot_memories, cold_memories, token_budget=1200):
@@ -38,11 +44,13 @@ def trim_to_budget(hot_memories, cold_memories, token_budget=1200):
     if estimate_tokens(candidate) <= token_budget:
         return hot_limited, cold_limited
 
+    # 先裁剪冷记忆（优先保留热记忆）
     while cold_limited and estimate_tokens(
         format_for_prompt(hot_limited, cold_limited)
     ) > token_budget:
         cold_limited.pop()
 
+    # 冷记忆裁完仍超出，再从旧到新裁热记忆
     while len(hot_limited) > 1 and estimate_tokens(
         format_for_prompt(hot_limited, cold_limited)
     ) > token_budget:

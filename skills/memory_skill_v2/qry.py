@@ -1,22 +1,23 @@
-import sys
-import os
+"""
+memory_skill_v2 · 调试查询工具
+================================
+查看当前 Redis 热记忆与 SQLite 冷记忆的内容。
 
-# 스킬 경로 추가 — 자신이 있는 폴더의 부모 디렉토리를 추가
-_SKILL_PARENT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, _SKILL_PARENT)
+运行方式（在 memory_skill_v2 的上级目录执行）：
+    python -m memory_skill_v2.qry
+"""
 
 import json
-import redis
-import sqlite3
 
-# DB 경로는 스킬 패키지에서 직접 가져옴
+import redis
+
 from memory_skill_v2.db.sqlite_db import get_db_path, get_conn
 
-r      = redis.from_url("redis://localhost:6379", decode_responses=True)
+r       = redis.from_url("redis://localhost:6379", decode_responses=True)
 db_path = get_db_path()
 print(f"SQLite 路径: {db_path}\n")
 
-# ── Redis 热记忆 ──────────────────────────────────────────
+# ── Redis 热记忆 ──────────────────────────────────────────────────────────────
 keys = r.keys("mem:hot:*")
 print(f"Redis 热记忆条数: {len(keys)}")
 for key in sorted(keys):
@@ -24,10 +25,10 @@ for key in sorted(keys):
     if not raw:
         continue
     data = json.loads(raw)
-    print(f"\n  [{data.get('turn','?')}轮] {data['summary'][:60]}")
+    print(f"\n  [第{data.get('turn', '?')}轮] {data['summary'][:60]}")
     print(f"  用户: {data['user_id']}  会话: {data['session_id']}")
 
-# ── SQLite 冷记忆 ─────────────────────────────────────────
+# ── SQLite 冷记忆 ─────────────────────────────────────────────────────────────
 conn = get_conn()
 rows = conn.execute(
     "SELECT user_id, session_id, turn, summary, keywords, created_at, version "

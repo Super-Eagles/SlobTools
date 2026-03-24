@@ -1,4 +1,5 @@
 import json
+import re
 
 from ..db import redis_db, sqlite_db
 from ..utils import vec_utils
@@ -66,7 +67,7 @@ def _get_cold(user_id, query_embedding, query_text):
 
 
 def _fts_search(conn, user_id, query_text, limit):
-    safe_query = _escape_fts(query_text)
+    safe_query = _build_fts_query(query_text)
     if not safe_query:
         return []
     try:
@@ -91,8 +92,41 @@ def _fts_search(conn, user_id, query_text, limit):
         return []
 
 
-def _escape_fts(text):
-    specials = '"*^()[]{}:,-'
-    cleaned  = "".join(c if c not in specials else " " for c in text)
-    tokens   = [t for t in cleaned.split() if len(t) > 1]
+# FTS5 特殊字符，需替换为空格
+_FTS_SPECIALS = re.compile(r'[\"*^()\[\]{}:,\-]')
+# CJK 统一汉字区块
+_CJK_RE       = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\U00020000-\U0002A6DF]')
+
+
+def _build_fts_query(text):
+    """构建 FTS5 OR 查询字符串，同时支持中文和非中文。
+
+    处理逻辑：
+    1. 移除 FTS5 特殊字符
+    2. 提取空格分隔的非 CJK token（长度 > 1）
+    3. 提取所有 CJK 单字作为独立 token
+    4. 用 OR 连接，去重保持顺序
+
+    示例：
+        "Redis和SQLite记忆系统搭配" → "Redis SQLite 记 忆 系 统 搭 配" → OR 查询
+    """
+    cleaned = _FTS_SPECIALS.sub(" ", text)
+
+    # 非 CJK 词（按空格切分，去掉纯 CJK 混合段中的残留）
+    non_cjk_tokens = [
+        t for t in cleaned.split()
+        if len(t) > 1 and not _CJK_RE.fullmatch(t)
+    ]
+
+    # CJK 单字
+    cjk_tokens = _CJK_RE.findall(text)
+
+    # 合并、去重、保持顺序
+    seen   = set()
+    tokens = []
+    for t in non_cjk_tokens + cjk_tokens:
+        if t not in seen:
+            seen.add(t)
+            tokens.append(t)
+
     return " OR ".join(tokens) if tokens else ""
