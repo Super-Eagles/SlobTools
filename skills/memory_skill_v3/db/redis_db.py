@@ -21,17 +21,26 @@ def ping():
 def check_persistence():
     """检查 Redis 是否开启了持久化（RDB 或 AOF）。
     未开启时打印 warning，提醒用户热记忆在 Redis 重启后会丢失。
+
+    RDB 是否启用：通过 CONFIG GET save 判断，save 为空字符串表示禁用。
+    rdb_last_bgsave_status 字段即使禁用 RDB 也存在，不能用于判断。
     """
     try:
         r = get_client()
-        info = r.info("persistence")
-        rdb_enabled = info.get("rdb_last_bgsave_status") is not None
+
+        # RDB：save 配置非空表示启用（默认值类似 "3600 1 300 100 60 10000"）
+        save_cfg    = r.config_get("save").get("save", "")
+        rdb_enabled = bool(save_cfg.strip())
+
+        # AOF：aof_enabled 为 1 表示启用
+        info        = r.info("persistence")
         aof_enabled = info.get("aof_enabled", 0) == 1
+
         if not rdb_enabled and not aof_enabled:
             print(
-                "[memory-skill] WARNING: Redis persistence is OFF. "
-                "Hot memories will be lost on Redis restart. "
-                "Enable RDB or AOF in redis.conf to avoid data loss."
+                "[memory-skill] WARNING: Redis persistence is OFF (neither RDB nor AOF). "
+                "Hot memories will be lost on Redis restart before flush(). "
+                "Enable RDB (CONFIG SET save '3600 1') or AOF in redis.conf to avoid data loss."
             )
     except Exception:
         pass  # 不因检查失败阻断启动

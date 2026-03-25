@@ -34,6 +34,11 @@ def persist_session(user_id, session_id):
         m.get("created_at", ""),
     ))
 
+    # 所有 key 均已过期（全部在 TTL 内未 flush），清理 index Set 后直接返回
+    if not memories:
+        redis_db.delete_hot_keys(r, user_id, session_id, [])
+        return {"inserted": 0, "updated": 0, "skipped": 0}
+
     conn  = sqlite_db.get_conn()
     stats = {"inserted": 0, "updated": 0, "skipped": 0}
 

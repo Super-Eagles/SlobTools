@@ -9,7 +9,7 @@ from .. import config
 # ── 连接单例 ──────────────────────────────────────────────────────────────────
 # SQLite 本身支持多线程读，但写操作存在竞争。
 # write_lock 在同一进程内序列化所有写入，配合 check_same_thread=False 使用。
-# 跨进程并发写入请开启 WAL 模式（PRAGMA journal_mode=WAL），当前版本不支持。
+# 跨进程并发写入已通过 WAL 模式（PRAGMA journal_mode=WAL）支持，见 get_conn()。
 _conn: sqlite3.Connection | None = None
 write_lock = threading.Lock()
 
