@@ -1,17 +1,17 @@
 """
-memory_skill_v3 · 调试查询工具
+memory_skill_v2 · 调试查询工具
 ================================
 查看当前 Redis 热记忆与 SQLite 冷记忆的内容。
 
-运行方式（在 memory_skill_v3 的上级目录执行）：
-    python -m memory_skill_v3.qry
+运行方式（在 memory_skill_v2 的上级目录执行）：
+    python -m memory_skill_v2.qry
 """
 
 import json
 
 import redis
 
-from memory_skill_v3.db.sqlite_db import get_db_path, get_conn
+from memory_skill_v2.db.sqlite_db import get_db_path, get_conn
 
 r       = redis.from_url("redis://localhost:6379", decode_responses=True)
 db_path = get_db_path()

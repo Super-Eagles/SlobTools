@@ -1,3 +1,16 @@
+"""
+utils/embedding.py
+==================
+两种运行模式（自动检测，无需改调用方）：
+
+  远程模式（推荐）：
+    设置环境变量  MEMORY_EMBED_SERVICE_URL=http://127.0.0.1:7731
+    本模块变为 HTTP 客户端，不加载 sentence-transformers，启动几乎零开销。
+
+  本地模式（向后兼容）：
+    不设置 MEMORY_EMBED_SERVICE_URL，行为与改造前完全相同。
+    模型在首次调用 embed() 时懒加载（~470 MB）。
+"""
 
 from .. import config
 import logging
@@ -28,7 +41,8 @@ def _remote_embed(text: str) -> list:
     except Exception as exc:
         raise RuntimeError(
             f"[memory-skill] Embedding service unreachable at {url}. "
-            f"Error: {exc}"
+            "Run `python embed_server.py` first, or unset MEMORY_EMBED_SERVICE_URL "
+            "to fall back to local mode."
         ) from exc
 
 
@@ -46,7 +60,8 @@ def _remote_embed_batch(texts: list) -> list:
     except Exception as exc:
         raise RuntimeError(
             f"[memory-skill] Embedding service unreachable at {url}. "
-            f"Error: {exc}"
+            "Run `python embed_server.py` first, or unset MEMORY_EMBED_SERVICE_URL "
+            "to fall back to local mode."
         ) from exc
 
 
@@ -78,7 +93,7 @@ def embed_batch(texts: list) -> list:
 
 def ping_service() -> bool:
     """
-    检查远程服务是否就绪。
+    检查远程服务是否就绪（供 api.setup() 调用）。
     本地模式下永远返回 True。
     """
     url = _service_url()
@@ -88,6 +103,5 @@ def ping_service() -> bool:
     try:
         resp = requests.get(f"{url}/health", timeout=3)
         return resp.status_code == 200
-    except Exception as e:
-        print(f"[memory-skill] Pin failed to {url}: {e}")
+    except Exception:
         return False

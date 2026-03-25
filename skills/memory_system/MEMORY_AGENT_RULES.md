@@ -47,8 +47,8 @@ AI 在整个对话过程中，必须维护以下三个值：
 
 调用：
 
-```bash
-memory.py remember --user <user_id> --session <session_id> --turn <turn> --text "<query_text>"
+```python
+memory_text = remember(user_id, session_id, turn, query_text)
 ```
 
 说明：
@@ -115,8 +115,16 @@ AI 回答时：
 
 调用：
 
-```bash
-memory.py memorize --user <user_id> --session <session_id> --turn <turn> --summary "<summary>" --keywords <关键词...>
+```python
+mem_ids = memorize(
+    user_id=user_id,
+    session_id=session_id,
+    turn=turn,
+    summary=summary,
+    keywords=keywords,
+    raw_q=user_text,
+    raw_a=answer_text,
+)
 ```
 
 说明：
@@ -137,12 +145,19 @@ turn += 1
 
 ---
 
-### 固化冷记忆
+## 4. 会话结束时的处理
+
+当用户出现下列意图时，应执行冷记忆固化：
+
+- “结束会话”
+- “flush 记忆”
+- “归档记忆”
+- “保存到长期记忆”
 
 调用：
 
-```bash
-memory.py flush --user <user_id> --session <session_id>
+```python
+stats = flush(user_id, session_id)
 ```
 
 说明：

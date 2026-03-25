@@ -1,12 +1,12 @@
 """
-memory_skill_v3 · 快速演示
+memory_skill_v2 · 快速演示
 ==========================
 直接运行：
-    cd <memory_skill_v3 的上级目录>
-    python -m memory_skill_v3.demo
+    cd <memory_skill_v2 的上级目录>
+    python -m memory_skill_v2.demo
 """
 
-import memory_skill_v3 as skill
+import memory_skill_v2 as skill
 
 skill.setup()
 

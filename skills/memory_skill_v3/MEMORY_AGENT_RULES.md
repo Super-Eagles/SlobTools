@@ -1,7 +1,7 @@
 # Memory Agent Rules
 
 本文件不是给人看的开发文档，而是给 AI 执行记忆流程时使用的操作规程。
-目标是让 AI 在每一轮对话中，按固定顺序使用 `memory_skill_v2`：
+目标是让 AI 在每一轮对话中，按固定顺序使用 `memory_skill_v3`：
 
 - 回答前先检索记忆
 - 检索结果先综合进回答
@@ -36,6 +36,23 @@ AI 在整个对话过程中，必须维护以下三个值：
   - 从 `1` 开始，每轮对话递增 `1`
 
 这三个值缺一不可。
+
+---
+
+## 2.1 推荐优先使用会话包装
+
+如果运行环境允许直接调用 Python 接口，优先使用：
+
+- `MemoryChatSession`
+- 或 `run_chat_turn()`
+
+原因：
+
+- `MemoryChatSession` 会自动维护 `turn`
+- `run_chat_turn()` 已经内置 `remember -> 回答 -> summarize -> memorize` 顺序
+- 这样可以减少手工漏调、漏加轮次的问题
+
+只有在无法使用会话包装时，才手工维护 `user_id / session_id / turn` 并分别调用 `remember()`、`memorize()`、`flush()`。
 
 ---
 
@@ -225,23 +242,26 @@ flush(user_id, session_id)
 
 ## 7. 当前版本的重要事实
 
-AI 应知道当前 `memory_skill_v2` 已具备以下行为：
+AI 应知道当前 `memory_skill_v3` 已具备以下行为：
 
 1. `memorize()` 会先整理拆分，再写入多条热记忆
 2. Redis 热记忆键已带 `item_index`，同一轮多条不会互相覆盖
 3. `retrieve()` 和 `flush()` 已按 `turn + item_index` 排序
 4. SQLite 冷记忆表已包含 `item_index` 和 `kind`
 5. `memorize()` 的返回值是 `mem_id` 列表
+6. 已提供 `run_chat_turn()` 与 `MemoryChatSession`，可直接托管标准回合流程
 
 ---
 
 ## 8. 给 AI 的最终执行要求
 
-如果 AI 被要求“使用 memory_skill_v2 记忆”，默认就按以下策略执行：
+如果 AI 被要求“使用 memory_skill_v3 记忆”，默认就按以下策略执行：
 
 1. 每轮先 `remember()`
 2. 再回答
 3. 回答后立刻 `memorize()`
 4. 用户明确要求结束时再 `flush()`
+
+如果能使用 `MemoryChatSession`，优先使用它托管 `turn` 的递增与每轮流程。
 
 除非用户明确禁止，否则不要跳过以上流程。

@@ -26,6 +26,8 @@
 | `D:\soft\SlobTools\db_universal.py`   | 读写 SQL Server 或 Redis 数据库                          |
 | `D:\soft\SlobTools\filetree.py`       | 查看指定路径的文件树                                      |
 | `D:\soft\SlobTools\count_code_lines.py` | 统计源码行数（代码行 / 注释行 / 空行，按语言分类）       |
+| `D:\soft\SlobTools\memory.py`          | AI 记忆系统全局入口（支持 remember / memorize / flush / stats） |
+
 
 ---
 
@@ -544,3 +546,32 @@ CMake                4        600          450           80         70
 ```
 
 可用 `--no-backup` 关闭，`--dry-run` 不生成备份也不写入任何内容。
+
+---
+
+## memory (AI 记忆系统)
+
+用于在对话过程中实现长短时记忆的存取和管理。
+
+### 核心功能
+
+```bash
+# 检索：获取当前问题相关的历史背景
+memory.py remember --user <用户ID> --session <会话ID> --text "问题"
+
+# 存入：将本轮结论存入 Redis 热记忆
+memory.py memorize --user <用户ID> --session <会话ID> --summary "摘要" --keywords k1 k2
+
+# 固化：将热记忆刷入 SQLite 持久化（会话结束时使用）
+memory.py flush --user <用户ID> --session <会话ID>
+
+# 统计：查看记忆总数
+memory.py stats --user <用户ID>
+```
+
+### 执行规则
+
+1. **先检索**：每轮对话开始前先 `remember`。
+2. **后存档**：每一轮回答后立刻 `memorize` 到热记忆。
+3. **终持久**：用户要求存档或归档时执行 `flush`。
+

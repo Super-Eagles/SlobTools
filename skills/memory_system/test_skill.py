@@ -1,13 +1,13 @@
 """
-memory_skill_v3 · 端到端测试
+memory_skill_v2 · 端到端测试
 ==============================
 测试 AI 可调用接口：remember / memorize / flush。
 使用真实的本地 embedding（sentence-transformers）。
 
 不需要真实 AI，下载模型后不需要网络连接。
 
-运行方式（在 memory_skill_v3 的上级目录执行）：
-    python -m memory_skill_v3.test_skill
+运行方式（在 memory_skill_v2 的上级目录执行）：
+    python -m memory_skill_v2.test_skill
 """
 
 import os
@@ -22,16 +22,16 @@ os.close(_tmp_fd)
 os.environ["MEMORY_SQLITE_PATH"] = _tmp_db
 os.environ["MEMORY_EMBED_DIM"]   = "384"
 
-import memory_skill_v3 as skill
+import memory_skill_v2 as skill
 
 
 def _reload_skill():
     global skill
 
-    import memory_skill_v3.api as api_module
-    from memory_skill_v3 import config
-    from memory_skill_v3.core import analyze, inject, persist, retrieve, write
-    from memory_skill_v3.db import redis_db, sqlite_db
+    import memory_skill_v2.api as api_module
+    from memory_skill_v2 import config
+    from memory_skill_v2.core import analyze, inject, persist, retrieve, write
+    from memory_skill_v2.db import redis_db, sqlite_db
 
     sqlite_db.close()
 
@@ -60,7 +60,7 @@ def sep(title=""):
 def test_setup():
     sep("TEST 1 · setup()")
     skill.setup()
-    from memory_skill_v3.db import sqlite_db
+    from memory_skill_v2.db import sqlite_db
 
     assert sqlite_db.get_db_path() == _tmp_db, (
         f"Expected temp db path {_tmp_db}, got {sqlite_db.get_db_path()}"
@@ -106,7 +106,7 @@ def test_memorize_and_hot_remember():
     )
     assert isinstance(mem_ids_2, list) and len(mem_ids_2) >= 2, mem_ids_2
 
-    from memory_skill_v3.db import redis_db
+    from memory_skill_v2.db import redis_db
 
     hot_keys = redis_db.get_hot_keys(USER, SID)
     assert len(hot_keys) >= 4, hot_keys

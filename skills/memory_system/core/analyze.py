@@ -53,7 +53,7 @@ def _build_category_hints():
     - config.EXTRA_CATEGORY_HINTS  按类别追加，格式相同，不影响其他类别
 
     示例：
-        from memory_skill_v3 import config
+        from memory_skill_v2 import config
         config.EXTRA_CATEGORY_HINTS = {"preference": ["prefer", "喜好"]}
     """
     base  = getattr(config, "CATEGORY_HINTS", None)
