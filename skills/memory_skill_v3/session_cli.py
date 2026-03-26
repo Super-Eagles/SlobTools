@@ -100,6 +100,27 @@ def _parse_keywords(value: str):
     return []
 
 
+def _read_text_file(path: str):
+    target = Path(path)
+    last_error = None
+    for encoding in ("utf-8", "utf-8-sig", "utf-16", "utf-16-le", "gbk"):
+        try:
+            return target.read_text(encoding=encoding)
+        except UnicodeDecodeError as exc:
+            last_error = exc
+    if last_error is not None:
+        raise last_error
+    return target.read_text(encoding="utf-8")
+
+
+def _pick_text_arg(direct_value, file_value, field_name: str):
+    if direct_value not in (None, ""):
+        return direct_value
+    if file_value not in (None, ""):
+        return _read_text_file(file_value)
+    raise SystemExit(f"{field_name} is required")
+
+
 def cmd_ensure(args):
     entry = _ensure_session(args.workspace, args.user_id, args.reset)
     print(json.dumps(entry, ensure_ascii=False, indent=2))
@@ -131,15 +152,18 @@ def cmd_remember(args):
 def cmd_write(args):
     api.setup()
     entry = _ensure_session(args.workspace, args.user_id, False)
+    question = _pick_text_arg(args.question, args.question_file, "question")
+    answer = _pick_text_arg(args.answer, args.answer_file, "answer")
+    summary = _pick_text_arg(args.summary, args.summary_file, "summary")
     keywords = _parse_keywords(args.keywords_json)
     mem_ids = api.memorize(
         user_id=entry["user_id"],
         session_id=entry["session_id"],
         turn=int(entry["turn"]),
-        summary=args.summary,
+        summary=summary,
         keywords=keywords,
-        raw_q=args.question,
-        raw_a=args.answer,
+        raw_q=question,
+        raw_a=answer,
     )
     entry["turn"] = int(entry["turn"]) + 1
     _update_entry(args.workspace, entry)
@@ -193,9 +217,12 @@ def build_parser():
 
     p_write = subparsers.add_parser("write")
     add_common(p_write)
-    p_write.add_argument("--question", required=True)
-    p_write.add_argument("--answer", required=True)
-    p_write.add_argument("--summary", required=True)
+    p_write.add_argument("--question")
+    p_write.add_argument("--question-file")
+    p_write.add_argument("--answer")
+    p_write.add_argument("--answer-file")
+    p_write.add_argument("--summary")
+    p_write.add_argument("--summary-file")
     p_write.add_argument("--keywords-json", default="[]")
     p_write.set_defaults(func=cmd_write)
 
