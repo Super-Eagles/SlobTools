@@ -2,6 +2,7 @@ from .db       import sqlite_db, redis_db
 from .core     import write, retrieve, persist, inject, analyze
 from .utils    import embedding
 from .         import config
+from .         import maintenance
 
 
 def setup():
@@ -87,3 +88,11 @@ def get_stats(user_id):
         "SELECT COUNT(DISTINCT session_id) FROM memories WHERE user_id = ?", (user_id,)
     ).fetchone()[0]
     return {"total_memories": total, "sessions": sess}
+
+
+def merge_db(target_db_path, source_db_path):
+    return maintenance.merge_databases(target_db_path, source_db_path)
+
+
+def rewrite_user_id(db_path, new_user_id, old_user_id=None):
+    return maintenance.rewrite_user_id(db_path, new_user_id, old_user_id)

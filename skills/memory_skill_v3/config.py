@@ -57,7 +57,7 @@ MEMORY_TOKEN_BUDGET = int(_get_env("MEMORY_TOKEN_BUDGET", "1200"))
 #   export MEMORY_EMBED_SERVICE_URL=http://127.0.0.1:7731
 #   python embed_server.py          # 在另一个终端先启动服务
 #   python your_app.py              # 主进程无需再加载模型
-EMBED_SERVICE_URL = _get_env("MEMORY_EMBED_SERVICE_URL", "")
+EMBED_SERVICE_URL = _get_env("MEMORY_EMBED_SERVICE_URL", "http://127.0.0.1:7731")
 
 # 自定义记忆分类词表（可选）。
 # - CATEGORY_HINTS       完整替换默认词表，dict[str, list[str]]

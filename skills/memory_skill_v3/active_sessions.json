@@ -1,12 +1,4 @@
 {
-  "D:\\mcsv3": {
-    "workspace": "D:\\mcsv3",
-    "user_id": "codex_slob",
-    "session_id": "mcsv3_20260325_195307",
-    "turn": 7,
-    "created_at": "2026-03-25T19:53:07.955712",
-    "updated_at": "2026-03-25T21:27:04.199803"
-  },
   "D:\\projectC++\\DEMO\\NetworkLib": {
     "workspace": "D:\\projectC++\\DEMO\\NetworkLib",
     "user_id": "codex_Administrator",
@@ -19,8 +11,24 @@
     "workspace": "C:\\YAOS",
     "user_id": "codex_Administrator",
     "session_id": "YAOS_20260326_084622",
-    "turn": 2,
+    "turn": 3,
     "created_at": "2026-03-26T08:46:22.057872",
-    "updated_at": "2026-03-26T08:49:42.899065"
+    "updated_at": "2026-04-01T22:37:20.851290"
+  },
+  "C:\\memory_skill_v3": {
+    "workspace": "C:\\memory_skill_v3",
+    "user_id": "codex_Administrator",
+    "session_id": "memory_skill_v3_20260402_081126",
+    "turn": 1,
+    "created_at": "2026-04-02T08:11:26.152833",
+    "updated_at": "2026-04-02T08:11:26.152833"
+  },
+  "C:\\memory_skill_v3\\tmp\\cli_smoke\\workspace": {
+    "workspace": "C:\\memory_skill_v3\\tmp\\cli_smoke\\workspace",
+    "user_id": "codex_Administrator",
+    "session_id": "workspace_20260402_081441",
+    "turn": 1,
+    "created_at": "2026-04-02T08:14:41.461384",
+    "updated_at": "2026-04-02T08:14:41.461384"
   }
 }

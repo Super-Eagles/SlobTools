@@ -1,10 +1,18 @@
 """
 memory_skill_v3 · 快速演示
 ==========================
-直接运行：
-    cd <memory_skill_v3 的上级目录>
+运行方式（两种均可）：
+    python memory_skill_v3/demo.py
     python -m memory_skill_v3.demo
 """
+
+import sys
+import os
+
+# ── 路径自配置：直接执行时自动找到包目录 ──────────────────────────────────────
+_pkg_parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _pkg_parent not in sys.path:
+    sys.path.insert(0, _pkg_parent)
 
 import memory_skill_v3 as skill
 

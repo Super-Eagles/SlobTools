@@ -26,25 +26,33 @@ _DB_PATH   = (
 def get_conn() -> sqlite3.Connection:
     global _conn
     if _conn is None:
-        db_dir = os.path.dirname(_DB_PATH)
-        if db_dir:
-            os.makedirs(db_dir, exist_ok=True)
-
-        _conn = sqlite3.connect(_DB_PATH, check_same_thread=False)
-        _conn.row_factory = sqlite3.Row
-
-        # WAL 模式允许多进程并发读写，写操作不阻塞读操作。
-        # busy_timeout 避免多 worker 同时写时立即抛 OperationalError。
-        _conn.execute("PRAGMA journal_mode=WAL")
-        _conn.execute("PRAGMA busy_timeout=3000")
-
-        _conn.enable_load_extension(True)
-        sqlite_vec.load(_conn)
-        _conn.enable_load_extension(False)
-
-        _create_schema(_conn)
+        _conn = open_conn(_DB_PATH, ensure_schema=True)
         print(f"[memory-skill] DB path: {_DB_PATH}")
     return _conn
+
+
+def open_conn(db_path: str, ensure_schema: bool = True) -> sqlite3.Connection:
+    """打开任意 SQLite 记忆库连接。"""
+    resolved = os.path.abspath(db_path)
+    db_dir = os.path.dirname(resolved)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+
+    conn = sqlite3.connect(resolved, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+
+    # WAL 模式允许多进程并发读写，写操作不阻塞读操作。
+    # busy_timeout 避免多 worker 同时写时立即抛 OperationalError。
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=3000")
+
+    conn.enable_load_extension(True)
+    sqlite_vec.load(conn)
+    conn.enable_load_extension(False)
+
+    if ensure_schema:
+        _create_schema(conn)
+    return conn
 
 
 def _create_schema(conn: sqlite3.Connection) -> None:
