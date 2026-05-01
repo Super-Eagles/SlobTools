@@ -578,3 +578,63 @@ memory.py stats --user <用户ID>
 2. **后存档**：每一轮回答后立刻 `memorize` 到热记忆。
 3. **终持久**：用户要求存档或归档时执行 `flush`。
 
+## word文档转换
+```bash
+#!/bin/bash
+
+# ============================================================
+# Markdown 与 Word/Excel 互转全攻略 (MarkItDown + Pandoc)
+# 适用场景：SIT 测试计划、技术文档、AI 辅助修改
+# ============================================================
+
+# 0. 环境准备：防止中文乱码 (Windows 终端必运行)
+chcp 65001
+
+# ------------------------------------------------------------
+# 第一部分：从 Word/Excel 提取内容 (使用 MarkItDown)
+# ------------------------------------------------------------
+
+# 1.1 将 Word 转换为 Markdown (智能保留结构，适合喂给 AI)
+markitdown "产品系统集成测试计划(SIT测试计划).docx" -o "task.md"
+
+# 1.2 将 Excel 转换为 Markdown (自动转为 MD 表格)
+markitdown "测试用例.xlsx" -o "cases.md"
+
+# 1.3 带有图片的 Word 转换 (自动提取图片)
+markitdown "带图文档.docx" -o "doc_with_images.md"
+
+
+# ------------------------------------------------------------
+# 第二部分：样式还原与转换 (使用 Pandoc)
+# ------------------------------------------------------------
+
+# 2.1 【核心必杀技】带原版样式还原 (借壳生蛋法)
+# 注意：template.docx 是你清空了内容但保留了样式的原版 Word 文件
+pandoc "task.md" --reference-doc="template.docx" -o "SIT计划_最终版.docx"
+
+# 2.2 导出为 HTML (再用 Excel 打开可变相转为 xlsx)
+pandoc "task.md" -s -o "preview.html"
+
+# 2.3 提取图片并转换
+# --extract-media 会把 MD 里的图片存到本地目录，防止 Word 里图片丢失
+pandoc "task.md" --reference-doc="template.docx" --extract-media=./media -o "final_with_images.docx"
+
+
+# ------------------------------------------------------------
+# 第三部分：开发者进阶命令
+# ------------------------------------------------------------
+
+# 3.1 生成一个 Pandoc 默认样式的参考文档 (用来修改样式起点)
+pandoc --print-default-data-file reference.docx > my_style_basis.docx
+
+# 3.2 批量转换当前目录下所有 MD 文件为 Word
+for f in *.md; do
+    pandoc "$f" --reference-doc="template.docx" -o "${f%.md}.docx"
+done
+
+# 3.3 转换 Markdown 表格为 CSV (适合导入数据库或极简 Excel)
+pandoc "task.md" -t csv -o "data_only.csv"
+
+echo "所有操作示例已列出。请确保 template.docx 存在于当前目录。"
+```
+
