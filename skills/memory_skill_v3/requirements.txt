@@ -1,3 +1,0 @@
-redis>=5.0
-sqlite-vec>=0.1.6
-sentence-transformers>=3.0

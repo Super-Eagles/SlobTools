@@ -28,6 +28,8 @@
 | `D:\soft\SlobTools\count_code_lines.py` | 统计源码行数（代码行 / 注释行 / 空行，按语言分类）       |
 | `D:\soft\SlobTools\memory.py`          | AI 记忆系统全局入口（支持 remember / memorize / flush / stats） |
 
+> Windows 简化入口：`read_file`、`filetree`、`write_file`、`count_code_lines` 已提供同名 `.cmd`
+> 包装脚本，可直接在 PowerShell / cmd 中使用；等价于调用对应的 `.py` 脚本。
 
 ---
 
@@ -458,6 +460,7 @@ db_universal redis -H host batch-del --pattern "tmp:*"
 ## filetree
 
 查看指定路径的文件树（只显示源码和配置文件，自动过滤 node_modules、dist、.git 等目录）。
+输出树线固定使用 ASCII（`|--` / `` `--``），避免 Windows 终端编码导致树形符号乱码。
 
 ```bash
 # 查看当前目录

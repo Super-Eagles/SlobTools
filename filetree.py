@@ -195,8 +195,8 @@ def build_tree(
 
     for i, entry in enumerate(visible):
         is_last = i == len(visible) - 1
-        connector = "└── " if is_last else "├── "
-        extension = "    " if is_last else "│   "
+        connector = "`-- " if is_last else "|-- "
+        extension = "    " if is_last else "|   "
 
         if entry.is_dir(follow_symlinks=False):
             name = (f"{BLUE}{entry.name}{RESET}" if use_color else entry.name) + "/"
