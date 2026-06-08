@@ -103,6 +103,9 @@ def guess_encoding(raw: bytes) -> tuple[str, float, bool]:
     if not raw:
         return "utf-8", 1.0, True  # 空文件视为 UTF-8
 
+    if raw.startswith(UTF8_BOM):
+        return "utf-8", 1.0, True
+
     if is_pure_ascii(raw):
         return "ascii", 1.0, True
 

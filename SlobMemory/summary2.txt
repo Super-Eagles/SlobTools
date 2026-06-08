@@ -1,0 +1,4 @@
+{
+  "summary": "针对用户提供的 othersys\\logiccountv1.2_20_dc 目录，分析了 Count.cpp。发现 CCount::SetOuputData 存在直接利用外部传入配置索引（i_idx）进行数组 f_OutVal[i_idx] 赋值的安全漏洞。证实由于缺少边界检查，当索引超界或传负数时造成的堆越界覆写，导致了后续的 malloc_trim 崩溃。",
+  "keywords": ["数组越界", "堆损坏", "Count.cpp", "SetOuputData", "边界检查"]
+}

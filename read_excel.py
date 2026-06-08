@@ -268,15 +268,15 @@ def mode_search(wb, args) -> str:
     if args.regex:
         try:
             compiled = re.compile(args.search, flags)
-            match_fn = lambda s: compiled.search(str(s)) is not None
+            match_fn = lambda s: s is not None and compiled.search(str(s)) is not None
         except re.error as e:
             _err(f"正则表达式错误：{e}")
     else:
         needle = args.search if args.case_sensitive else args.search.lower()
         if args.case_sensitive:
-            match_fn = lambda s: needle in str(s)
+            match_fn = lambda s: s is not None and needle in str(s)
         else:
-            match_fn = lambda s: needle in str(s).lower()
+            match_fn = lambda s: s is not None and needle in str(s).lower()
 
     # 确定限定列索引
     search_col_idx: int | None = None
@@ -349,11 +349,75 @@ def mode_stats(wb, args) -> str:
     return f"# 工作表：{ws.title}，数值统计\n" + _format_output(stat_header, stat_rows, args.format)
 
 
+def cell_has_color(cell) -> tuple[bool, str | None]:
+    """检查单元格是否有非默认背景颜色，并返回 (是否带颜色, ARGB十六进制码)"""
+    fill = cell.fill
+    if not fill or not fill.fill_type:
+        return False, None
+    color = fill.start_color.rgb if fill.start_color else None
+    if isinstance(color, str):
+        if color in ('00000000', 'FFFFFFFF'):
+            return False, None
+        return True, color
+    if fill.fill_type == 'solid':
+        return True, 'Theme/Indexed'
+    return False, None
+
+
+def mode_color(wb, args) -> str:
+    """找出带有背景颜色（非白色、非默认）的单元格对应的行数据。"""
+    ws = _get_sheet(wb, args.sheet)
+    max_row = ws.max_row or 0
+    max_col = ws.max_column or 0
+    if max_row == 0 or max_col == 0:
+        return "（工作表为空）"
+
+    # 读取第一行作为表头（用以生成每列的描述）
+    header = [str(ws.cell(row=1, column=c).value or f"列{c}") for c in range(1, max_col + 1)]
+
+    results = []
+    # 扫描每一行中的每一列单元格
+    for r in range(1, max_row + 1):
+        row_colors = []
+        row_data = []
+        for c in range(1, max_col + 1):
+            cell = ws.cell(row=r, column=c)
+            val = cell.value
+            row_data.append(val)
+            has_c, c_code = cell_has_color(cell)
+            if has_c:
+                if args.color:
+                    if args.color.upper() in c_code.upper():
+                        row_colors.append((c, c_code))
+                else:
+                    row_colors.append((c, c_code))
+        if row_colors:
+            results.append((r, row_data, row_colors))
+
+    if not results:
+        if args.color:
+            return f"未找到背景颜色包含 '{args.color}' 的行"
+        return "未找到带背景颜色的行"
+
+    lines = [f"# 共找到 {len(results)} 行带背景颜色的数据（工作表：{ws.title}）\n"]
+    for r_num, r_data, r_cols in results:
+        cell_info = ", ".join(f"{get_column_letter(c_idx)}{r_num}(颜色:{c_code})" for c_idx, c_code in r_cols)
+        lines.append(f"  第 {r_num} 行 [{cell_info}]：")
+        parts = []
+        for ci, val in enumerate(r_data):
+            col_name = header[ci] if ci < len(header) else f"列{ci+1}"
+            parts.append(f"    {get_column_letter(ci+1)}{r_num}[{col_name}]={repr(val)}")
+        lines.extend(parts)
+        lines.append("")
+
+    return "\n".join(lines).rstrip()
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # CLI
 # ══════════════════════════════════════════════════════════════════════════════
 
-MODES   = ("info", "read", "cell", "formula", "search", "stats")
+MODES   = ("info", "read", "cell", "formula", "search", "stats", "color")
 FORMATS = ("table", "json", "csv", "raw")
 
 
@@ -389,6 +453,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="[search] 将 --search 视为正则表达式")
     p.add_argument("--case-sensitive", action="store_true",
                    help="[search] 区分大小写（默认不区分）")
+    # color
+    p.add_argument("--color", type=str, default=None, metavar="HEX",
+                   help="[color] 过滤特定颜色的十六进制值，如 FFFFFF00（黄色）")
     # 输出
     p.add_argument("--format", choices=FORMATS, default="table",
                    help=f"输出格式（默认 table）：{' | '.join(FORMATS)}")
@@ -420,6 +487,7 @@ def main() -> None:
         "formula": mode_formula,
         "search":  mode_search,
         "stats":   mode_stats,
+        "color":   mode_color,
     }
     try:
         result = dispatch[args.mode](wb, args)

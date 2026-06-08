@@ -1,0 +1,1 @@
+"C:\memory_skill_v3\MEMORY_AGENT_SYSTEM_PROMPT.md" 这个说明有问题吗？还是C:\memory_skill_v3里的脚本有问题？现在回到教员系统，这个系统如何跟主控通信的？

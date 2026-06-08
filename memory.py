@@ -12,18 +12,21 @@ except AttributeError:
 
 # Setup paths
 current_dir = os.path.dirname(os.path.abspath(__file__))
-skills_path = os.path.join(current_dir, "skills")
-sys.path.append(skills_path)
+sys.path.insert(0, current_dir)
 
 try:
-    # Try importing from the preferred package name
-    try:
-        from memory_skill_v2 import api
-    except ImportError:
-        from memory_system import api
+    from SlobMemory import api
 except ImportError:
-    print(f"Error: Could not find memory core in {skills_path}")
-    sys.exit(1)
+    skills_path = os.path.join(current_dir, "skills")
+    sys.path.append(skills_path)
+    try:
+        try:
+            from memory_skill_v2 import api
+        except ImportError:
+            from memory_system import api
+    except ImportError:
+        print(f"Error: Could not find memory core")
+        sys.exit(1)
 
 def main():
     parser = argparse.ArgumentParser(description="Memory Skill Global CLI")

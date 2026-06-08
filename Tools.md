@@ -1,8 +1,8 @@
 # 文本与 Excel 工具集使用说明
 
-> 使用脚本读取和写入文件，遇到问题，可修改对应脚本
+> 必须使用工具读取和写入文件，禁止直接使用命令，遇到问题，可修改对应脚本或创建脚本，如果创建，必须同步更新此文档
 > 所有脚本在同一目录下(D:\soft\SlobTools)，已配置好关联。
-> 如要运行脚本 read_gbk 只需用简化命令 read_gbk
+> 如要运行脚本 D:\soft\SlobTools\read_gbk.py 只需用简化命令 read_gbk，其它脚本也一样
 > 如果现有脚本功能不满足，也不要使用python命令，修改脚本满足使用功能，不好修改的也可以新增脚本
 > 如果有临时文件，可以放在当前目录的tmp目录下，没有就新建一个，临时文件不要乱放
 
@@ -21,15 +21,22 @@
 | `D:\soft\SlobTools\utf8togbk.py`      | 批量转换目录：UTF-8 → GBK                               |
 | `D:\soft\SlobTools\read_excel.py`     | 读取 Excel 文件（info / read / cell / formula / search / stats） |
 | `D:\soft\SlobTools\write_excel.py`    | 写入 Excel 文件（保留格式和公式）                         |
-| `D:\soft\SlobTools\cmp.py`            | 对比两个 Excel 文件的单元格差异（pandas 版）              |
 | `D:\soft\SlobTools\cmpexcel.py`       | 对比两个 Excel 文件（openpyxl 版，支持插入/删除行检测）   |
 | `D:\soft\SlobTools\db_universal.py`   | 读写 SQL Server 或 Redis 数据库                          |
 | `D:\soft\SlobTools\filetree.py`       | 查看指定路径的文件树                                      |
 | `D:\soft\SlobTools\count_code_lines.py` | 统计源码行数（代码行 / 注释行 / 空行，按语言分类）       |
+| `D:\soft\SlobTools\copy_source.py`    | 提取/复制 Qt/MSVC 源码及工程文件，保持目录结构              |
+| `D:\soft\SlobTools\replace_source.py` | 递归批量查找和替换源码文件中的文本（支持 UTF-8/GBK/预览）    |
+| `D:\soft\SlobTools\search_source.py`  | 递归批量查找源码文件中的文本（高亮匹配/自适应编码）         |
+| `D:\soft\SlobTools\dev_tool.py`       | 开发者百宝箱（时间戳转换/Base64/URL编解码/MD5哈希等）       |
+| `D:\soft\SlobTools\json_tool.py`      | JSON 数据美化、单行压缩与转义字符清理还原                 |
 | `D:\soft\SlobTools\memory.py`          | AI 记忆系统全局入口（支持 remember / memorize / flush / stats） |
+| `D:\soft\SlobTools\SlobMemory\session_cli.py` | AI 记忆系统会话级 CLI（支持 ensure / remember / write / flush） |
+| `D:\soft\SlobTools\dump32.bat`        | Visual Studio 32位 dumpbin 包装脚本                      |
+| `D:\soft\SlobTools\dump64.bat`        | Visual Studio 64位 dumpbin 包装脚本                      |
 
-> Windows 简化入口：`read_file`、`filetree`、`write_file`、`count_code_lines` 已提供同名 `.cmd`
-> 包装脚本，可直接在 PowerShell / cmd 中使用；等价于调用对应的 `.py` 脚本。
+> Windows 简化入口：`read_file`、`filetree`、`write_file`、`count_code_lines`、`search_source`、`dev_tool`、`json_tool` 提供同名 `.cmd` 包装脚本；`memory` 提供 `memory.bat` 包装脚本；`session_cli` 提供 `session_cli.bat` 包装脚本；`dump32` 和 `dump64` 提供同名 `.bat` 包装脚本。这些包装脚本可直接在 PowerShell / cmd 中使用，等价于调用对应的脚本或工具。
+
 
 ---
 
@@ -206,7 +213,7 @@ utf8togbk <源目录> <目标目录> --follow-links
 
 读取 Excel 文件（`.xlsx` / `.xlsm`），支持多种模式和输出格式。
 
-### 六种模式
+### 七种模式
 
 ```bash
 # info — 文件概览（工作表列表、行列数、列名）
@@ -236,6 +243,10 @@ read_excel <文件> --mode search --search "ABC" --case-sensitive
 # stats — 数值列统计（min / max / 均值 / 求和）
 read_excel <文件> --mode stats
 read_excel <文件> --mode stats --cols 薪资 利润
+
+# color — 查找带背景颜色的行
+read_excel <文件> --mode color
+read_excel <文件> --mode color --color FFFFFF00        # 过滤特定颜色（如黄色）
 ```
 
 ### 输出格式
@@ -311,21 +322,7 @@ write_excel <文件> --mode rename-sheet --sheet "Sheet1" --sheet-name "数据"
 
 `--start` / `--end` 使用含表头的 Excel 行号：第 1 行 = 表头，第 2 行 = 第 1 条数据，以此类推。
 
----
 
-## cmp
-
-使用 pandas 对比两个 Excel 文件的单元格内容，适合结构相同（列名一致）的表格比较。
-
-```bash
-cmp 表1.xlsx 表2.xlsx
-```
-
-- 输出每个 Sheet 中列名仅存在于单侧、行数不同、单元格值不同的情况
-- 显示差异时带有 Excel 坐标（如 `[C3]`）和列名提示
-- Sheet 按位置顺序两两对比（第1个 vs 第1个，第2个 vs 第2个……）
-
----
 
 ## cmpexcel
 
@@ -540,6 +537,70 @@ CMake                4        600          450           80         70
 
 ---
 
+## copy_source
+
+用于提取/复制 Qt 和 MSVC C++ 源码及工程结构文件，并保持原有的目录层级。
+自动忽略构建、临时和版本控制目录，避免复制冗余文件（如 `moc`、`.vs` 等）。
+
+### 用法
+
+```bash
+python D:\soft\SlobTools\copy_source.py <源目录> <目标目录>
+```
+
+### 特点
+- **过滤特定后缀名**：仅复制以下后缀的文件：
+  - C/C++ 源码：`.cpp`, `.h`, `.hpp`, `.c`, `.cc`, `.cxx`, `.hxx`
+  - Qt 资源与翻译：`.ui`, `.qrc`, `.ts`, `.tr`
+  - VS/Qt 工程文件：`.sln`, `.vcxproj`, `.filters`, `.pro`, `.pri`
+  - 特定文件名：`CMakeLists.txt`
+- **自动忽略目录**：跳过 `.vs`, `debug`, `release`, `x64`, `x86`, `generatedfiles`, `build`, `.git`, `.svn`, `out` 等目录，防止陷入死循环或产生冗余。
+- **安全检查**：如果源目录和目标目录相同，会自动拦截并报错，避免覆盖原文件。
+
+---
+
+## replace_source
+
+递归地批量查找和替换当前目录下所有源码/文本文件中的指定文本，支持自动检测 UTF-8 与 GBK 编码，并支持预览（dry-run）模式。
+
+### 用法
+
+```bash
+python D:\soft\SlobTools\replace_source.py <查找内容> <替换内容>         # 执行真实替换
+python D:\soft\SlobTools\replace_source.py <查找内容> <替换内容> dry     # 仅预览，不实际修改
+```
+
+### 特点
+- **编码自适应**：自动尝试以 `utf-8` 和 `gbk` 编码读取文件，替换后以原编码写回，避免因编码格式错误导致乱码。
+- **过滤特定文件类型**：只对常见的代码和文本文档进行替换，如 `.py`, `.js`, `.ts`, `.cpp`, `.h`, `.java`, `.html`, `.css`, `.json`, `.md`, `.txt`, `.sql` 等。
+- **自动忽略排除目录**：自动跳过 `.git`, `node_modules`, `__pycache__`, `venv`, `.venv`, `dist`, `build` 等目录。
+- **支持预览**：传入 `dry` 参数时，仅输出匹配的路径及匹配项个数，确保在大规模修改前可以进行校验。
+
+---
+
+## dump32 / dump64
+
+Visual Studio 的 `dumpbin` 实用工具包装脚本，用于分析 32 位/64 位二进制文件（如 PE 结构、导出符号、导入表等）。
+
+### 用法
+
+```bash
+dump32 <选项> <文件>
+dump64 <选项> <文件>
+```
+
+### 示例
+
+```bash
+dump32 /EXPORTS my_dll.dll   # 查看 32 位 DLL 导出的函数
+dump64 /HEADERS my_app.exe   # 查看 64 位 EXE 头信息
+```
+
+- 脚本内部已配置好 MSVC (Visual Studio 2019 Community) 中对应架构的 `dumpbin.exe` 路径。
+- 支持透传所有命令行参数给底层的 `dumpbin`。
+
+---
+
 ## 备份说明
 
 `write_file`、`write_gbk`、`write_excel` 每次写入前自动在原文件同目录生成备份：
@@ -552,31 +613,50 @@ CMake                4        600          450           80         70
 
 ---
 
-## memory (AI 记忆系统)
+## memory 与 session_cli (AI 记忆系统)
 
-用于在对话过程中实现长短时记忆的存取和管理。
+用于在对话过程中实现长短时记忆的存取和管理。数据库文件 `memory.db` 和会话状态文件 `active_sessions.json` 均保存在 `D:\soft\SlobTools\SlobMemory\` 目录下。
 
-### 核心功能
+### 1. 全局工具接口 (memory.py)
 
+可以直接通过 `memory` 命令调用：
 ```bash
 # 检索：获取当前问题相关的历史背景
-memory.py remember --user <用户ID> --session <会话ID> --text "问题"
+memory remember --user <用户ID> --session <会话ID> --text "问题"
 
 # 存入：将本轮结论存入 Redis 热记忆
-memory.py memorize --user <用户ID> --session <会话ID> --summary "摘要" --keywords k1 k2
+memory memorize --user <用户ID> --session <会话ID> --summary "摘要" --keywords k1 k2
 
 # 固化：将热记忆刷入 SQLite 持久化（会话结束时使用）
-memory.py flush --user <用户ID> --session <会话ID>
+memory flush --user <用户ID> --session <会话ID>
 
 # 统计：查看记忆总数
-memory.py stats --user <用户ID>
+memory stats --user <用户ID>
 ```
 
-### 执行规则
+### 2. 会话级命令接口 (session_cli)
 
-1. **先检索**：每轮对话开始前先 `remember`。
-2. **后存档**：每一轮回答后立刻 `memorize` 到热记忆。
-3. **终持久**：用户要求存档或归档时执行 `flush`。
+基于当前工作区（Workspace）自动维护会话状态，可以直接通过 `session_cli` 命令调用：
+```bash
+# 初始化会话（同一项目第一次对话时执行，自动生成/恢复 session_id 和 turn）
+session_cli ensure --workspace "<项目绝对路径>"
+
+# 检索记忆（回答前调用，返回相关记忆文本）
+session_cli remember --workspace "<项目绝对路径>" --query "<用户问题>"
+
+# 写入热记忆并递增 turn（回答后调用，传入本轮问题、回答及摘要）
+session_cli write --workspace "<项目绝对路径>" --question "<用户问题>" --answer "<AI回答>" --summary "<本轮摘要>" --keywords-json "kw1,kw2"
+
+# 固化会话并清除热记忆（结束对话时调用，将热记忆刷入 SQLite 长期数据库中）
+session_cli flush --workspace "<项目绝对路径>"
+```
+
+### 3. 记忆存入与改进规则 (过滤无用记忆)
+
+为了保证记忆库的高效和整洁，避免垃圾数据（如日常问候、临时状态、一次性细节）占用 Token 预算，我们实施了以下记忆改进规则：
+- **按需整理，过滤无用**：每一轮问答结束后，仅当产生具有长期价值的稳定信息（如用户长期偏好、明确约束/前提、已确认的决定、对项目/代码的重要结论）时，才提炼出摘要并写入记忆；
+- **空摘要直接跳过**：如果在对话中只是进行普通地查看/检查文件、简单问答、日常闲聊等无长期价值的操作，摘要大模型/AI 应直接将摘要内容设为空，或者传回 `{"summary":"","keywords":[]}`，记忆系统检测到摘要为空时**会自动跳过本轮记忆的写入**，仅安全地递增 turn 轮数，不向数据库中增加任何无用记忆；
+- **彻底去除 General 兜底策略**：取消了对无匹配项的文本进行通用 fallback (general) 强行写入的逻辑，当本轮确实没有有价值的结论时，彻底不进行任何冷热数据库写入。
 
 ## word文档转换
 ```bash
@@ -637,4 +717,73 @@ pandoc "task.md" -t csv -o "data_only.csv"
 
 echo "所有操作示例已列出。请确保 template.docx 存在于当前目录。"
 ```
+
+---
+
+## search_source
+
+在指定目录的源码中查找关键词或正则，自动检测 UTF-8/GBK 编码，并高亮匹配行。
+
+### 用法
+
+```bash
+search_source <关键词>                        # 在当前目录下递归搜索 (不区分大小写)
+search_source <关键词> --dir <目录>            # 在指定目录下搜索
+search_source <关键词> --regex                # 使用正则表达式搜索
+search_source <关键词> --case-sensitive       # 区分大小写搜索
+search_source <关键词> --ext .cpp .h          # 只搜索指定后缀的文件
+search_source <关键词> --exclude-dirs tmp      # 排除额外目录
+```
+
+---
+
+## dev_tool
+
+开发者日常百宝箱：提供时间戳转换、Base64/URL 编解码、哈希计算等高频功能。
+
+### 常用命令
+
+```bash
+# 1. 时间戳转换
+dev_tool time                                # 获取当前本地时间与秒/毫秒时间戳
+dev_tool time 1717764000                     # 时间戳转本地格式化时间
+dev_tool time "2026-06-07 20:40:00"          # 本地格式化时间转秒/毫秒时间戳
+
+# 2. Base64 编解码
+dev_tool base64 encode "hello"               # 编码
+dev_tool base64 decode "aGVsbG8="             # 解码 (自动尝试 UTF-8/GBK)
+
+# 3. URL 编解码
+dev_tool url encode "参数"                   # 编码
+dev_tool url decode "%E5%8F%82%E6%95%B0"     # 解码
+
+# 4. 哈希计算 (支持文本或存在的文件路径)
+dev_tool hash md5 "admin"                    # 计算字符串的 MD5
+dev_tool hash sha256 ./main.cpp              # 计算本地文件的 SHA-256
+```
+
+---
+
+## json_tool
+
+JSON 数据处理工具：格式化美化、单行压缩以及清理还原转义过的 JSON 字符串（如日志里取出的带斜杠 JSON）。
+
+### 常用命令
+
+```bash
+# 1. 格式化/美化 JSON (支持文件路径或直接传入字符串)
+json_tool format '{"name":"bob","age":20}'
+json_tool format ./config.json
+
+# 2. 压缩 JSON
+json_tool minify ./config.json
+json_tool minify '{"a": 1, "b": 2}'
+
+# 3. 清洗还原双重转义 JSON 字符串 (自动去除多余反斜杠并进行美化)
+json_tool clean '\"{\\\"name\\\":\\\"bob\\\"}\"'
+
+# 4. 管道流操作
+cat data.json | json_tool format
+```
+
 

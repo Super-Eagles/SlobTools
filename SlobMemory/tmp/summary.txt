@@ -1,0 +1,1 @@
+记忆乱码原因为 Windows 命令行下 Python 默认使用 GBK 编码输出到 stdout，需使用 PYTHONIOENCODING=utf-8。教员系统与主控通信采用双向 HTTP + 状态订阅 WebSocket：主控通过 C_HttpServer (Mongoose) 监听，路由分发于 C_TeachSystemMgr::OnRequest；教员系统通过 C_HTTP_NetWork_I 客户端向主控发送 createroute、studentlogin 等控制 POST，并通过 ws://... 订阅实时状态数据分发给 OnNetWorkMsg。

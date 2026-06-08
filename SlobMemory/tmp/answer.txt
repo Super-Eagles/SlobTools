@@ -1,0 +1,39 @@
+### 1. 记忆乱码问题分析
+`MEMORY_AGENT_SYSTEM_PROMPT.md` 与 `memory_skill_v3` 脚本**均无问题**。
+问题根源在于：在 Windows 环境下，系统命令行默认以 GBK (CP936) 编码运行。Python 运行 `session_cli` 打印输出时使用了 `print(text)` 直接输出 UTF-8 字符流，这被系统命令行以 GBK 解析输出，导致大模型在接收和读取标准输出时获取了乱码（如 `ӵ¼䡣ڻш...`）。
+**解决方案**：在运行命令行前，显式指定环境变量 `PYTHONIOENCODING=utf-8`。如在 `cmd` 中执行：
+```cmd
+set PYTHONIOENCODING=utf-8 && session_cli remember ...
+```
+这能完全保证输出的 JSON 中文编码无损、显示正常。
+
+### 2. 教员系统与主控的通信链路整理
+教员系统（TCS, Teach Control System）与主控（XXH / MainNode）的通信是双向的，涉及 HTTP 服务、HTTP 客户端和 WebSocket：
+
+#### 2.1 主控 -> 教员系统（HTTP 服务端接收指令）
+- **底层的 HTTP 服务**：
+  - 文件：`NetworkModule\C_HttpServer.cpp`
+  - 核心类/函数：`C_HttpServer::Start`（第 38 行），基于 Mongoose 绑定端口启动 HTTP 服务；`C_HttpServer::MsgHandle`（第 8 行）解析 POST 请求并分发。
+- **业务接收路由**：
+  - 文件：`DataMgrModule\C_TeachSystemMgr.cpp`
+  - 核心函数：`C_TeachSystemMgr::OnRequest`（第 655-770 行）。
+  - 支持的控制 API（主控发送 POST 至 TCS）：
+    - `/api/getsysstatus`：获取教员系统状态。
+    - `/api/ChangeSimulator`：切换/分配控制的模拟器（第 672 行）。
+    - `/api/UserLogin`：主控下发教员登录指令（第 707 行）。
+    - `/api/UserLogout`：主控下发教员注销指令（第 742 行）。
+    - `/api/GetSimulatorID`：主控获取教员系统控制的模拟器主节点 ID 数组（第 754 行）。
+
+#### 2.2 教员系统 -> 主控（HTTP 客户端发起控制）
+- **通信接口**：
+  - 文件：`DataMgrModule\C_TeachSystemMgr.cpp`
+  - 函数：`C_TeachSystemMgr::SendCmdToXXH`（第 484-499 行）以及 `C_SimulatorMgr::SendCmdToMain`（`C_SimulatorMgr.cpp` 第 1744-1758 行）。
+  - 实现方式：构造 `ST_HTTP_REQUEST_PACK`，通过 `C_HTTP_NetWork_I` 客户端同步请求主控的 HTTP 服务端。
+- **典型指令**（主控接口地址通常为 `http://<主控IP>:<端口>/api/`）：
+  - `createroute`（创建进路）、`cancelroute`（取消进路）、`studentlogin`（学员登录）、`stopcourse`（停止开课）、`rollbackcontinuefms`（回滚接续）等。
+
+#### 2.3 状态数据推送（WebSocket 订阅）
+- **订阅链路**：
+  - 文件：`DataMgrModule\C_SimulatorMgr.cpp`
+  - 函数：`C_SimulatorMgr::StartSimulatorCtrl`（第 423-439 行）中通过 `m_SimRecvMgr.Start` 连接到主控的 WebSocket 服务，地址形式为 `ws://<主控IP>:<端口>/api/subscribe_sysstatus`。
+  - 回调分发：在接收线程中收到数据后，调用 `C_SimulatorMgr::OnNetWorkMsg`（第 1775 行）解析并分发如 `DMM_TYPE_FMSSTATUS`（训练状态推送）、`DMM_TYPE_SELFCHECK`（自检推送）和 `DMM_TYPE_ROLLBACKSTATUS`（回滚状态推送）等实时消息。

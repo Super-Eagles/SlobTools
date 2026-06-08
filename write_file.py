@@ -137,8 +137,10 @@ def detect_file_encoding(raw: bytes, override: str | None = None) -> FileEncodin
     """检测原始字节的编码，override 可手动指定 'gbk' 或 'utf-8'。"""
     if override and override.lower() not in ("auto", ""):
         enc = override.lower().replace("-", "")
-        if enc in ("utf8", "utf8sig"):
-            return FileEncoding("utf-8", has_bom=raw.startswith(UTF8_BOM))
+        if enc == "utf8sig":
+            return FileEncoding("utf-8", has_bom=True)
+        elif enc == "utf8":
+            return FileEncoding("utf-8", has_bom=False)
         return FileEncoding("gbk")
 
     if not raw:
@@ -161,8 +163,9 @@ def detect_file_encoding(raw: bytes, override: str | None = None) -> FileEncodin
 def load_file(path: str, encoding_override: str | None = None) -> tuple[list[str], FileEncoding]:
     """加载文件，返回 (行列表, 编码信息)。文件不存在时返回空列表。"""
     if not os.path.exists(path):
-        default = "utf-8" if (encoding_override or "").lower().replace("-","") in ("utf8","utf8sig") else "gbk"
-        return [], FileEncoding(default)
+        enc_name = "utf-8" if (encoding_override or "").lower().replace("-","") in ("utf8","utf8sig") else "gbk"
+        has_bom = (encoding_override or "").lower().replace("-","") == "utf8sig"
+        return [], FileEncoding(enc_name, has_bom=has_bom)
 
     with open(path, "rb") as f:
         raw = f.read()

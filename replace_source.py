@@ -2,7 +2,6 @@
 # 用法:
 #   python replace.py <查找> <替换>        # 直接替换
 #   python replace.py <查找> <替换> dry    # 只预览，不修改
-print("vvv")
 import os, sys
 
 if len(sys.argv) < 3:

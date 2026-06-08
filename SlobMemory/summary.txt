@@ -1,0 +1,1 @@
+分析了 ggg.log 调试日志，程序崩溃根因确定为：堆内存损坏 (Heap Corruption)。表现为 Thread 1 执行 malloc_trim() 触发崩溃，但罪魁祸首极可能为 Thread 19 在 CCount::SetOuputData 等业务运算中发生野指针或越界，破坏了底层数据结构。

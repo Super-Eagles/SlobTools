@@ -1,0 +1,59 @@
+（注：本次记忆检索步骤因本地 Redis 服务异常失败，但我已直接为您审查本地代码）
+
+结合前面 gdb 日志发现的 Thread 19 崩溃可疑记录以及您提供的代码路径 `othersys\logiccountv1.2_20_dc`，我查阅了 `Count.cpp` 里的 `CCount::SetOuputData` 源代码。确认了这是一起典型的**数组越界引发的堆内存破坏（Heap Corruption）**问题。
+
+### 缺陷代码分析
+在 `CCount::SetOuputData(int i_col_1, int i_col_2, int *i_RowData, unsigned char *c_OutBit, float *f_OutVal)` 函数中（代码大约在 2420 行附近），可以看到以下赋值段：
+
+```cpp
+        i_idx = i_RowData[i_col_2];
+        if(i_idx != 0)
+        {
+                f_State = GetFloatValue(i_RowData);
+                if(fabs(f_State) != 0)
+                {
+                        ... 略去取偏移值的计算 ...
+                        f_OutVal[i_idx] = f_State + f_value; // <-- 危险！
+                }
+                else
+                {
+                        f_OutVal[i_idx] = f_State;           // <-- 危险！
+                }
+        }
+```
+
+同时，还有：
+```cpp
+        i_idx = i_RowData[i_col_1];
+        if(i_idx != 0)
+        {
+                i_State = GetBitState(i_RowData);
+                if(i_idx > 0)
+                        SetBit(i_idx, c_OutBit, i_State);
+                else
+                        SetBit(i_idx, c_OutBit, !i_State);
+        }
+```
+
+### 根因说明：缺失边界校验
+在从外部数据源（配置矩阵或者通讯传入的 `i_RowData`）中读取下标索引 `i_idx` 后，**代码没有任何对其进行上下界的合法性验证（Bounds Checking）**。
+1. **下界溢出（Underflow）**：如果 `i_RowData[i_col_2]` 返回的值是**负数**（比如 `-1`），那么上述代码执行时会等效于 `*(f_OutVal - 1) = f_State;`，它将**篡改被分配内存块头部或前方的相邻结构**。
+2. **上界溢出（Overflow）**：如果配置表配错了，传入的 `i_idx` 是个巨大的数字，超过了原本 `f_OutVal` 规划的物理空间，会强行向内存区域以后的段写值。
+
+而在数字量（Bit序列）这边的 `SetBit`（在 `LogicDef.h` 中），虽然代码通过 `n = (-1) * data;` 把负数统一转为了正值，但这只解决了非负问题，如果绝对值一样超过了 `c_OutBit` 对应的缓冲容量，也会再次导致严重的越界。
+
+正是在运行过程中，某个无效或超出期望范围的索引项传入到了 `f_OutVal[i_idx]` 进行赋值，覆盖了堆分配管理器（glibc malloc chunk）的控制头。等到 Thread 1 调用 `malloc_trim` 去梳理全程序堆内存时，一碰到被写坏的地方便会立即崩溃宕机。
+
+### 修复建议
+对所有涉及到利用配置表/外部数据做数组下标直接访问的地方需要添加有效区间判断：
+```cpp
+    i_idx = i_RowData[i_col_2];
+    if(i_idx != 0 && i_idx >= 0 && i_idx < FLOAT_ARRAY_MAX_SIZE) {
+        // 进行安全的赋值
+        f_OutVal[i_idx] = xxx;
+    } else if (i_idx != 0) {
+        // 在日志打印出越界的故障数据警告
+        printf("Critical Error: Out of bounds float index %d\n", i_idx);
+    }
+```
+对于调用 `SetBit` 的地方也要传入最大限制或校验 `i_idx` 绝对值不能超出字节数组的比特规模。修正此项后该崩溃便可彻底根治。
