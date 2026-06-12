@@ -8,9 +8,12 @@ def compare():
         
     diff = difflib.unified_diff(lines2, lines1, fromfile='cp_update-test.py', tofile='cp_update.py')
     
-    with open('C:/memory_skill_v3/diff_result.txt', 'w', encoding='utf-8') as out:
+    import os
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    diff_path = os.path.join(base_dir, 'diff_result.txt')
+    with open(diff_path, 'w', encoding='utf-8') as out:
         out.writelines(diff)
-    print("Diff complete. Written to C:/memory_skill_v3/diff_result.txt")
+    print(f"Diff complete. Written to {diff_path}")
 
 if __name__ == '__main__':
     compare()

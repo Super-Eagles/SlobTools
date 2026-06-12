@@ -48,6 +48,8 @@ TOP_K            = int(_get_env("MEMORY_TOP_K",        "5"))
 SIM_THRESHOLD    = float(_get_env("MEMORY_SIM_THRESHOLD",   "0.75"))
 MERGE_THRESHOLD  = float(_get_env("MEMORY_MERGE_THRESHOLD", "0.88"))
 SESSION_TTL      = int(_get_env("MEMORY_SESSION_TTL",  "86400"))
+SESSION_ID       = _get_env("MEMORY_SESSION_ID",       "")
+USER_ID          = _get_env("MEMORY_USER_ID",          "")
 
 # 注入到 prompt 的记忆 token 预算。
 # 建议值：GPT-4 / Claude → 1200，GPT-3.5 → 800，长上下文模型可放大到 2000+。

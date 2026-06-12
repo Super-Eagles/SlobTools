@@ -2,7 +2,9 @@ import sqlite3
 import io
 
 def dump_all():
-    conn = sqlite3.connect('C:/memory_skill_v3/memory.db')
+    import os
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(os.path.join(base_dir, 'memory.db'))
     cursor = conn.cursor()
     
     cursor.execute("PRAGMA table_info(memories)")
@@ -12,7 +14,7 @@ def dump_all():
     rows = cursor.fetchall()
     print(f"Dumping {len(rows)} memories...")
     
-    with io.open('C:/memory_skill_v3/all_memories_utf8.txt', 'w', encoding='utf-8') as f:
+    with io.open(os.path.join(base_dir, 'all_memories_utf8.txt'), 'w', encoding='utf-8') as f:
         for row in rows:
             record = dict(zip(columns, row))
             f.write("="*80 + "\n")

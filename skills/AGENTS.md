@@ -65,6 +65,6 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
 ## 5. windows系统，注意语法，注意原编码
-记忆规则 C:\memory_skill_v3\MEMORY_AGENT_SYSTEM_PROMPT.md
+记忆规则 D:\soft\SlobTools\SlobMemory\MEMORY_AGENT_SYSTEM_PROMPT.md
 工具规则 D:\soft\SlobTools\Tools.md
 尽量使用工具，如果工具使用中有问题，可以修改工具或是创建工具，不过要注意同步更新工具文档

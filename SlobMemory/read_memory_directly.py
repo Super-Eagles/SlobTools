@@ -1,7 +1,9 @@
 import sqlite3
 
 def test():
-    conn = sqlite3.connect('C:/memory_skill_v3/memory.db')
+    import os
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(os.path.join(base_dir, 'memory.db'))
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(memories)")
     cols = cursor.fetchall()

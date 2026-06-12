@@ -2,7 +2,9 @@ import sqlite3
 import sys
 
 def search():
-    conn = sqlite3.connect('C:/memory_skill_v3/memory.db')
+    import os
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(os.path.join(base_dir, 'memory.db'))
     cursor = conn.cursor()
     
     # We want to select rows where summary, raw_q, raw_a contain '主控', '通信', '教员', etc.

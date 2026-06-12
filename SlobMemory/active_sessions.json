@@ -191,14 +191,6 @@
     "created_at": "2026-05-07T08:19:05.148371",
     "updated_at": "2026-05-19T09:02:09.287939"
   },
-  "d:\\github\\yaos": {
-    "workspace": "d:\\github\\yaos",
-    "user_id": "codex_Administrator",
-    "session_id": "yaos_20260509_073317",
-    "turn": 24,
-    "created_at": "2026-05-09T07:33:17.330533",
-    "updated_at": "2026-05-30T08:10:20.539750"
-  },
   "d:\\remote-new\\remotescene": {
     "workspace": "d:\\remote-new\\remotescene",
     "user_id": "codex_Administrator",
@@ -238,5 +230,21 @@
     "turn": 1,
     "created_at": "2026-06-06T15:12:52.174015",
     "updated_at": "2026-06-06T15:12:52.174015"
+  },
+  "d:\\github\\yaos": {
+    "workspace": "d:\\github\\yaos",
+    "user_id": "SlobMaster",
+    "session_id": "session_slob",
+    "turn": 4,
+    "created_at": "2026-06-10T22:11:39.380516",
+    "updated_at": "2026-06-11T07:07:28.766883"
+  },
+  "d:\\soft\\slobtools": {
+    "workspace": "d:\\soft\\slobtools",
+    "user_id": "SlobMaster",
+    "session_id": "session_slob",
+    "turn": 1,
+    "created_at": "2026-06-10T22:20:51.349750",
+    "updated_at": "2026-06-10T22:20:51.349750"
   }
 }

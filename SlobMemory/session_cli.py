@@ -74,6 +74,10 @@ def _new_session_id(workspace: str) -> str:
 
 def _ensure_session(workspace: str, user_id: Optional[str] = None, reset: bool = False, create: bool = True):
     workspace = _normalize_workspace(workspace)
+    from . import config
+
+    resolved_user_id = user_id or config.USER_ID or _default_user_id()
+
     with _state_lock():
         state = _load_state()
         entry = state.get(workspace)
@@ -84,8 +88,8 @@ def _ensure_session(workspace: str, user_id: Optional[str] = None, reset: bool =
             now = datetime.now().isoformat()
             entry = {
                 "workspace":  workspace,
-                "user_id":    user_id or _default_user_id(),
-                "session_id": _new_session_id(workspace),
+                "user_id":    resolved_user_id,
+                "session_id": config.SESSION_ID or _new_session_id(workspace),
                 "turn":       1,
                 "created_at": now,
                 "updated_at": now,
@@ -94,8 +98,17 @@ def _ensure_session(workspace: str, user_id: Optional[str] = None, reset: bool =
             _save_state(state)
             return entry
 
-        if user_id and entry.get("user_id") != user_id:
-            entry["user_id"]    = user_id
+        has_updates = False
+        target_user = user_id or config.USER_ID
+        if target_user and entry.get("user_id") != target_user:
+            entry["user_id"]    = target_user
+            has_updates = True
+
+        if config.SESSION_ID and entry.get("session_id") != config.SESSION_ID:
+            entry["session_id"] = config.SESSION_ID
+            has_updates = True
+
+        if has_updates:
             entry["updated_at"] = datetime.now().isoformat()
             state[workspace]    = entry
             _save_state(state)
